@@ -1,6 +1,16 @@
 use std::net::{TcpListener, TcpStream};
-use std::io::{stdout, Read, Write};
+use std::io::{Read, Write};
 use std::thread;
+use clap::Parser;
+
+#[derive(Parser)]
+#[clap(name="echo")]
+struct Options {
+    #[clap(value_parser)]
+    domain : String,
+    #[clap(value_parser)]
+    port : String
+}
 
 fn handle_client(mut stream: TcpStream) {
     let mut buf : [u8;1] = [0;1];
@@ -15,19 +25,20 @@ fn handle_client(mut stream: TcpStream) {
                     break;
                 }
         }
-        stream.write(&buf);
+        _ = stream.write(&buf);
     }
     println!("Closing Connection");
 }
 
 fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("0.0.0.0:8080")?;
+    let options = Options::parse();
+    let listener = TcpListener::bind([options.domain, options.port].join(":"))?;
 
     // accept connections and process them serially
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                    let handler = thread::spawn(move || {
+                    let _handler = thread::spawn(move || {
                         handle_client(stream);
                     });
             }
